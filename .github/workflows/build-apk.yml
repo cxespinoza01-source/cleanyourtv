@@ -23,9 +23,11 @@ jobs:
 
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Instalar paquetes Android SDK
-        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+        with:
+          packages: |
+            platform-tools
+            platforms;android-34
+            build-tools;34.0.0
 
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -41,10 +43,7 @@ jobs:
       - name: Verificar APK
         run: |
           APK="launcher/app/build/outputs/apk/release/app-release.apk"
-          if [ ! -f "$APK" ]; then
-            echo "ERROR: No se encontro el archivo APK."
-            exit 1
-          fi
+          test -f "$APK" || { echo "No se encontro el APK"; exit 1; }
           ls -lh "$APK"
 
       - name: Publicar APK descargable
