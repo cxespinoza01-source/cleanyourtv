@@ -14,7 +14,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ResolveInfo;
-import android.content.pm.ChangedPackages;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -1082,15 +1081,40 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
     }
 
-    /** True when PackageManager reports apps changed since the last rebuild (one binder call). */
+    /**
+     * PackageManager.getChangedPackages was added in API 26. On Nougat, package broadcasts registered for
+     * this Activity's lifetime are the change signal; when the API exists, keep the sequence-number fast path.
+     * Reflection keeps the API-26-only ChangedPackages type out of this class's verifier-visible signatures.
+     */
+    private Object changedPackages(int since) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null;
+        try {
+            return PackageManager.class.getMethod("getChangedPackages", int.class)
+                    .invoke(getPackageManager(), since);
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            return null;
+        }
+    }
+
     private boolean packagesChangedSinceRebuild() {
-        ChangedPackages changed = getPackageManager().getChangedPackages(packageSequence);
-        return changed != null && !changed.getPackageNames().isEmpty();
+        Object changed = changedPackages(packageSequence);
+        if (changed == null) return false; // API 24-25: packageReceiver handles install/update/removal broadcasts.
+        try {
+            List<?> names = (List<?>) changed.getClass().getMethod("getPackageNames").invoke(changed);
+            return names != null && !names.isEmpty();
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            return false;
+        }
     }
 
     private int currentPackageSequence(int since) {
-        ChangedPackages changed = getPackageManager().getChangedPackages(since);
-        return changed != null ? changed.getSequenceNumber() : since;
+        Object changed = changedPackages(since);
+        if (changed == null) return since;
+        try {
+            return ((Number) changed.getClass().getMethod("getSequenceNumber").invoke(changed)).intValue();
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            return since;
+        }
     }
 
     /**
