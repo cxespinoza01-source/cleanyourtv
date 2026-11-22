@@ -9,7 +9,8 @@ android {
     defaultConfig {
         // Opt-in identity for firmware with a package-name HOME allowlist; see docs/devices/xiaomi-mitv-aetp0-dofus.md.
         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
-        minSdk 26
+        // Android 7.0 (Nougat), API 24. Newer framework APIs are guarded or have compatible fallbacks.
+        minSdk 24
         targetSdk 34
         versionCode 9
         versionName '3.0'
@@ -37,12 +38,18 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+        // java.time is used by the clock, seasonal themes and wallpaper scheduler. Backport its supported APIs
+        // to Android 7 instead of allowing API 26 framework linkage at runtime.
+        coreLibraryDesugaringEnabled true
     }
 }
 
 dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
+    // ResourcesCompat provides XML font loading on API 24-25 (Resources.getFont starts at API 26).
+    implementation 'androidx.core:core:1.13.1'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
     // Test only (never in the APK): plain JVM tests for the module card validators, src/test.
     testImplementation 'junit:junit:4.13.2'
 }
