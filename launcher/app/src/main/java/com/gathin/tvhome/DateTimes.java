@@ -4,6 +4,7 @@ import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -18,8 +19,12 @@ final class DateTimes {
         return year * 10000 + month * 100 + day;
     }
 
+    static Calendar nowCalendar() {
+        return new GregorianCalendar(TimeZone.getDefault(), Locale.ROOT);
+    }
+
     static int todayKey() {
-        Calendar c = Calendar.getInstance();
+        Calendar c = nowCalendar();
         return dateKey(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
     }
 
@@ -30,7 +35,7 @@ final class DateTimes {
         ParsePosition p = new ParsePosition(0);
         Date parsed = f.parse(value, p);
         if (parsed == null || p.getIndex() != value.length()) throw new IllegalArgumentException("Invalid date");
-        Calendar c = Calendar.getInstance(UTC, Locale.ROOT);
+        Calendar c = new GregorianCalendar(UTC, Locale.ROOT);
         c.setTime(parsed);
         return dateKey(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
     }
@@ -43,7 +48,7 @@ final class DateTimes {
     }
 
     static int offsetMinutesAtNoon(int dateKey, TimeZone zone) {
-        Calendar c = Calendar.getInstance(zone, Locale.ROOT);
+        Calendar c = new GregorianCalendar(zone, Locale.ROOT);
         c.clear();
         c.set(dateKey / 10000, (dateKey / 100) % 100 - 1, dateKey % 100, 12, 0, 0);
         return zone.getOffset(c.getTimeInMillis()) / 60000;
