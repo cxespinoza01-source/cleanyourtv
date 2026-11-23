@@ -231,7 +231,7 @@ class Android7DocsTest(unittest.TestCase):
         rows = [line for line in EXAMPLES.read_text(encoding="utf-8").split("\n")
                 if line.startswith("| `sony-kd-55x8509c/`")]
         self.assertEqual(len(rows), 1)
-        self.assertNotIn("minSdk 24", rows[0])
+        self.assertNotIn("minSdk 26", rows[0])
         self.assertIn("minSdk 24", rows[0])
 
 
