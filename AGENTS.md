@@ -50,7 +50,7 @@ this file repeats their rules in the form an agent needs, and links to them for 
 - **Close ADB afterwards.** USB debugging and Network/ADB debugging off, authorisations revoked, reboot,
   then `tools/adb-closed.py <tv ip>` must report the port closed. Port 5555 is plaintext.
 - **Stop and say so** when the TV refuses: `pm disable-user` refused for every package, a sideload that
-  fails verification, or an SDK below the launcher's `minSdk` 26. Do not retry in a loop, and do not lower
+  fails verification, or an SDK below the launcher's `minSdk` 24. Do not retry in a loop, and do not lower
   `minSdk` or hand over an APK built elsewhere.
 - **Not an Android TV?** No ADB port at all, or the set identifies as Tizen, webOS, Roku OS, VIDAA or
   SmartCast: stop, nothing here applies. Send the person to https://cleanyour.tv/not-android, which turns
@@ -72,7 +72,7 @@ share their TV's list afterwards, follow [`docs/workflows/tv-list.md`](docs/work
 | `CODE_OF_CONDUCT.md` | Includes the rule against publishing device identifiers, Wi-Fi names and IPs. |
 | `examples/` | One folder per tested TV model: `debloat.txt`, `tv.json` (its row in the TV tables), sometimes a `README.md` and a `config.json`. Indexed in `examples/README.md`, whose table is generated too. |
 | `docs/` | `docs/TROUBLESHOOTING.md`, the module-card contract (`docs/modules.md`), `docs/devices/` for models with notes but no tested list, and the [workflows](#workflows). |
-| `launcher/` | The reference launcher, package `com.gathin.tvhome`: plain Java, AndroidX RecyclerView and DynamicAnimation, `minSdk` 26, no `INTERNET` permission. |
+| `launcher/` | The reference launcher, package `com.gathin.tvhome`: plain Java, AndroidX RecyclerView and DynamicAnimation, `minSdk` 24, no `INTERNET` permission. |
 | `themes/` | One folder per theme: `config.json`, a required `screenshot.jpg`, optional wallpapers. Keys are documented in `themes/README.md`. |
 | `addons/` | Optional module-card apps, each its own Gradle project, never built into the launcher. |
 | `tools/` | The ADB client (`tv.py`) and the scripts, listed in the README's Tools table. Shell scripts have PowerShell twins. Each script's usage is in its first lines, and the larger ones have a guide beside them (`tools/*.md`): read it before running the script. |
