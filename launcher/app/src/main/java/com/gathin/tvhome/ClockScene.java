@@ -17,8 +17,8 @@ import android.view.View;
 import android.widget.ImageView;
 
 import java.io.File;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.TimeZone;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -216,10 +216,11 @@ final class ClockScene {
     /** WallpaperPlayer's filter: the pictures wallpaper_moods allows at this hour, or all of them. */
     private List<File> playable() {
         if (moods.isEmpty()) return rotation;
-        LocalDateTime now = LocalDateTime.now();
-        int[] sun = WallpaperMood.sun(now.toLocalDate(), latitude, longitude, ZoneId.systemDefault());
+        Calendar now = Calendar.getInstance();
+        int[] sun = WallpaperMood.sun(DateTimes.dateKey(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1,
+                now.get(Calendar.DAY_OF_MONTH)), latitude, longitude, TimeZone.getDefault());
         return WallpaperMood.select(rotation, moods,
-                WallpaperMood.timeOfDay(now.getHour() * 60 + now.getMinute(), sun[0], sun[1]));
+                WallpaperMood.timeOfDay(now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE), sun[0], sun[1]));
     }
 
     private void moveClock() {
