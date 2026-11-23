@@ -1,3 +1,4 @@
-# R8 keeps source line information for stack traces but may shorten class and method names.
-# Obfuscation is enabled to meet the small-APK budget on low-memory Android TV devices.
--keepattributes SourceFile,LineNumberTable
+# Shrink and optimise, but keep class and method names: the size win comes from dropping unused
+# AndroidX code, not from renaming, and readable stack traces matter more in a sideloaded app
+# where crash reports arrive as screenshots.
+-dontobfuscate
