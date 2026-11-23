@@ -85,7 +85,7 @@ final class RaceWeekend {
             this.name = name;
             this.place = place;
             List<Session> sorted = new ArrayList<>(sessions);
-            sorted.sort((a, b) -> a.start.compareTo(b.start));
+            sorted.sort((a, b) -> Long.compare(a.start, b.start));
             this.sessions = Collections.unmodifiableList(sorted);
         }
 
@@ -104,7 +104,7 @@ final class RaceWeekend {
         final Session live;
         /** The next session to start, or null once the race has started. */
         final Session next;
-        /** Time until {@link #next} starts; null when there is no next session. */
+        /** Milliseconds until {@link #next} starts; zero when there is no next session. */
         final long untilNextMs;
 
         State(Race race, List<Status> statuses, Session live, Session next, long untilNextMs) {
@@ -115,7 +115,7 @@ final class RaceWeekend {
             this.untilNextMs = untilNextMs;
         }
 
-        /** The race is over and the panel is only showing the weekend until {@link #TAIL} runs out. */
+        /** The race is over and the panel is only showing the weekend until {@link #TAIL_MS} runs out. */
         boolean finished() {
             return live == null && next == null;
         }
