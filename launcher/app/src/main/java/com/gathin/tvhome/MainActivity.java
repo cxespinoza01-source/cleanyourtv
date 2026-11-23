@@ -940,7 +940,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         // A festival that started or ended while Home was in the background: rebuild with or without it.
-        if (festive != festival.active(LocalDate.now())) {
+        if (festive != festival.active(DateTimes.todayKey())) {
             recreate();
             return;
         }
