@@ -216,7 +216,7 @@ final class ClockScene {
     /** WallpaperPlayer's filter: the pictures wallpaper_moods allows at this hour, or all of them. */
     private List<File> playable() {
         if (moods.isEmpty()) return rotation;
-        Calendar now = Calendar.getInstance();
+        Calendar now = DateTimes.nowCalendar();
         int[] sun = WallpaperMood.sun(DateTimes.dateKey(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1,
                 now.get(Calendar.DAY_OF_MONTH)), latitude, longitude, TimeZone.getDefault());
         return WallpaperMood.select(rotation, moods,
