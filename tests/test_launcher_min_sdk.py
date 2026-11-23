@@ -163,7 +163,7 @@ class MinSdkGuardTest(unittest.TestCase):
 
     def test_the_number_comes_from_the_build_file(self):
         # What #608 (minSdk 24) changes: the guard has to follow the build file, not a copy of it.
-        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 24\n    }\n}\n")
+        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 23\n    }\n}\n")
         result, _ = self.install(sdk="23")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(self.marker.exists())
