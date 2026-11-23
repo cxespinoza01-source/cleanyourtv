@@ -2573,7 +2573,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             live.setSpan(new android.text.style.ForegroundColorSpan(RACE_RED), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             raceHeadline.setText(live);
         } else if (s.next != null) {
-            String in = RaceWeekend.countdown(getResources(), s.untilNext);
+            String in = RaceWeekend.countdown(getResources(), s.untilNextMs);
             raceHeadline.setText(s.next.isRace() ? getString(R.string.race_lights_out, in)
                     : getString(R.string.race_next, s.next.title(getResources()), in));
         } else {
