@@ -151,7 +151,7 @@ final class WallpaperPlayer {
     /** The pictures the rotation picks from now: wallpaper_moods' group for the time of day, or the whole collection. */
     private List<File> playable() {
         if (moods.isEmpty()) return files;
-        Calendar now = Calendar.getInstance();
+        Calendar now = DateTimes.nowCalendar();
         int today = DateTimes.dateKey(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1,
                 now.get(Calendar.DAY_OF_MONTH));
         if (today != sunDay) {
