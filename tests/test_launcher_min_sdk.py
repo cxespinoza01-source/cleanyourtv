@@ -99,7 +99,7 @@ class MinSdkGuardTest(unittest.TestCase):
         (self.launcher / "app").mkdir(parents=True)
         shutil.copy2(ROOT / "launcher" / "build-and-install.sh", self.launcher)
         self.gradle = self.launcher / "app" / "build.gradle"
-        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 23\n    }\n}\n")
+        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 24\n    }\n}\n")
         # The build step only has to leave a marker: no JDK or SDK is involved here.
         self.marker = self.base / "built"
         gradlew = self.launcher / "gradlew"
