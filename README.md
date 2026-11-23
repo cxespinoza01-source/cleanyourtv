@@ -579,7 +579,7 @@ apps), which is why the report names that loss per package instead of calling it
 A small native home screen for Android TV: **about 523 KB**, plain Java, built for TVs with 1 GB of RAM.
 No blur, no video, no network permission, no background services.
 
-The **TV** needs Android 8.0 (API 26) or newer: `minSdk` is a compile-time floor in
+The **TV** needs Android 7.0 (API 24) or newer: `minSdk` is a compile-time floor in
 [`launcher/app/build.gradle`](launcher/app/build.gradle), and the install script asks the TV for
 `ro.build.version.sdk` before it builds, so an older set is told both numbers instead of failing at
 `pm install` (see [Troubleshooting](docs/TROUBLESHOOTING.md) for what is left on such a set).
@@ -999,7 +999,8 @@ script for it is in [PR #84](https://github.com/Gathin23/cleanyourtv/pull/84).
 <summary><b>Can I just download the APK?</b></summary>
 
 Build it with the one-line script; it takes a minute and you
-control what goes on your TV. No prebuilt binaries.
+control what goes on your TV. No prebuilt binaries. For the Android 7 compatibility branch in this
+fork, the CI build publishes a temporary APK under Actions → the latest successful run → Artifacts.
 
 </details>
 

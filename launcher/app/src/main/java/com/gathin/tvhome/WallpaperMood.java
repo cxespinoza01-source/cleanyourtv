@@ -1,8 +1,7 @@
 package com.gathin.tvhome;
 
 import java.io.File;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.util.TimeZone;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +33,11 @@ final class WallpaperMood {
     }
 
     /** That day's {sunrise, sunset} at config.xml's latitude and longitude; the defaults when either is unusable. */
-    static int[] sun(LocalDate day, String latitude, String longitude, ZoneId zone) {
+    static int[] sun(int dayKey, String latitude, String longitude, TimeZone zone) {
         int[] times = null;
         try {
             if (!latitude.trim().isEmpty() && !longitude.trim().isEmpty()) {
-                times = Sun.riseAndSet(day, Double.parseDouble(latitude.trim()), Double.parseDouble(longitude.trim()), zone);
+                times = Sun.riseAndSet(dayKey, Double.parseDouble(latitude.trim()), Double.parseDouble(longitude.trim()), zone);
             }
         } catch (NumberFormatException ignored) {
             // not a number: the defaults

@@ -2,8 +2,7 @@ package com.gathin.tvhome;
 
 import android.content.res.Resources;
 
-import java.time.Duration;
-import java.time.Instant;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,18 +17,18 @@ import java.util.Locale;
 final class RaceWeekend {
 
     /** The panel shows from this long before a weekend's first session... */
-    static final Duration LEAD = Duration.ofHours(12);
+    static final long LEAD_MS = 12L * 60 * 60 * 1000;
     /** ...until this long after the race starts: a race runs about two hours, then the result settles. */
-    static final Duration TAIL = Duration.ofHours(4);
+    static final long TAIL_MS = 4L * 60 * 60 * 1000;
 
     enum Status { DONE, LIVE, NEXT, LATER }
 
     static final class Session {
         /** As written in the calendar: FP1, FP2, FP3, SPRINT QUALI, SPRINT, QUALIFYING or RACE. */
         final String name;
-        final Instant start;
+        final long start;
 
-        Session(String name, Instant start) {
+        Session(String name, long start) {
             this.name = name.trim().toUpperCase(Locale.ROOT);
             this.start = start;
         }
@@ -39,10 +38,10 @@ final class RaceWeekend {
         }
 
         /** Roughly how long the session is live; only used to tell live from done. */
-        Duration length() {
-            if (isRace()) return Duration.ofHours(2);
-            if (name.equals("SPRINT QUALI")) return Duration.ofMinutes(45);
-            return Duration.ofHours(1);
+        long lengthMs() {
+            if (isRace()) return 2L * 60 * 60 * 1000;
+            if (name.equals("SPRINT QUALI")) return 45L * 60 * 1000;
+            return 60L * 60 * 1000;
         }
 
         /** The name in the countdown line: "Qualifying in 2h 14m". */
@@ -86,7 +85,7 @@ final class RaceWeekend {
             this.name = name;
             this.place = place;
             List<Session> sorted = new ArrayList<>(sessions);
-            sorted.sort((a, b) -> a.start.compareTo(b.start));
+            sorted.sort((a, b) -> Long.compare(a.start, b.start));
             this.sessions = Collections.unmodifiableList(sorted);
         }
 
@@ -105,18 +104,18 @@ final class RaceWeekend {
         final Session live;
         /** The next session to start, or null once the race has started. */
         final Session next;
-        /** Time until {@link #next} starts; null when there is no next session. */
-        final Duration untilNext;
+        /** Milliseconds until {@link #next} starts; zero when there is no next session. */
+        final long untilNextMs;
 
-        State(Race race, List<Status> statuses, Session live, Session next, Duration untilNext) {
+        State(Race race, List<Status> statuses, Session live, Session next, long untilNextMs) {
             this.race = race;
             this.statuses = Collections.unmodifiableList(statuses);
             this.live = live;
             this.next = next;
-            this.untilNext = untilNext;
+            this.untilNextMs = untilNextMs;
         }
 
-        /** The race is over and the panel is only showing the weekend until {@link #TAIL} runs out. */
+        /** The race is over and the panel is only showing the weekend until {@link #TAIL_MS} runs out. */
         boolean finished() {
             return live == null && next == null;
         }
@@ -126,27 +125,27 @@ final class RaceWeekend {
     }
 
     /** The weekend {@code now} falls in, or null when no race is near. */
-    static State at(List<Race> calendar, Instant now) {
+    static State at(List<Race> calendar, long now) {
         for (Race race : calendar) {
             if (race.sessions.isEmpty()) continue;
-            Instant opens = race.sessions.get(0).start.minus(LEAD);
-            Instant closes = race.sessions.get(race.sessions.size() - 1).start.plus(TAIL);
-            if (now.isBefore(opens) || !now.isBefore(closes)) continue;
+            long opens = race.sessions.get(0).start - LEAD_MS;
+            long closes = race.sessions.get(race.sessions.size() - 1).start + TAIL_MS;
+            if (now < opens || now >= closes) continue;
 
             List<Status> statuses = new ArrayList<>();
             Session live = null, next = null;
             for (Session s : race.sessions) {
-                if (now.isBefore(s.start)) {
+                if (now < s.start) {
                     statuses.add(next == null ? Status.NEXT : Status.LATER);
                     if (next == null) next = s;
-                } else if (now.isBefore(s.start.plus(s.length()))) {
+                } else if (now < s.start + s.lengthMs()) {
                     statuses.add(Status.LIVE);
                     live = s;
                 } else {
                     statuses.add(Status.DONE);
                 }
             }
-            return new State(race, statuses, live, next, next == null ? null : Duration.between(now, next.start));
+            return new State(race, statuses, live, next, next == null ? 0 : next.start - now);
         }
         return null;
     }
@@ -155,8 +154,8 @@ final class RaceWeekend {
      * "42 min", "2h 14m", "1d 3h". Rounded up to the minute, so a session 20 seconds away still reads
      * "1 min" and the countdown never says 0 before the session is live.
      */
-    static String countdown(Resources res, Duration d) {
-        long minutes = Math.max(1, (d.getSeconds() + 59) / 60);
+    static String countdown(Resources res, long millis) {
+        long minutes = Math.max(1, (millis + 59_999) / 60_000);
         if (minutes < 60) return res.getString(R.string.race_countdown_minutes, minutes);
         long hours = minutes / 60;
         if (hours < 24) return res.getString(R.string.race_countdown_hours, hours, minutes % 60);

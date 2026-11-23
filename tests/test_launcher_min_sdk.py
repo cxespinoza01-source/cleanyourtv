@@ -99,7 +99,7 @@ class MinSdkGuardTest(unittest.TestCase):
         (self.launcher / "app").mkdir(parents=True)
         shutil.copy2(ROOT / "launcher" / "build-and-install.sh", self.launcher)
         self.gradle = self.launcher / "app" / "build.gradle"
-        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 26\n    }\n}\n")
+        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 24\n    }\n}\n")
         # The build step only has to leave a marker: no JDK or SDK is involved here.
         self.marker = self.base / "built"
         gradlew = self.launcher / "gradlew"
@@ -144,10 +144,10 @@ class MinSdkGuardTest(unittest.TestCase):
         return result, state
 
     def test_a_tv_below_min_sdk_is_stopped_before_the_build(self):
-        result, state = self.install(sdk="25")
+        result, state = self.install(sdk="23")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("SDK 25", result.stderr)
-        self.assertIn("minSdk 26", result.stderr)
+        self.assertIn("SDK 23", result.stderr)
+        self.assertIn("minSdk 24", result.stderr)
         self.assertIn("INSTALL_FAILED_OLDER_SDK", result.stderr)
         self.assertIn("Nothing was built", result.stderr)
         self.assertFalse(self.marker.exists(), "the APK must not be built for a set that refuses it")
@@ -155,7 +155,7 @@ class MinSdkGuardTest(unittest.TestCase):
                          "the SDK probe is all that may reach the TV")
 
     def test_a_tv_at_min_sdk_installs(self):
-        result, state = self.install(sdk="26")
+        result, state = self.install(sdk="24")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Installed.", result.stdout)
         self.assertTrue(self.marker.exists())
@@ -163,8 +163,8 @@ class MinSdkGuardTest(unittest.TestCase):
 
     def test_the_number_comes_from_the_build_file(self):
         # What #608 (minSdk 24) changes: the guard has to follow the build file, not a copy of it.
-        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 24\n    }\n}\n")
-        result, _ = self.install(sdk="25")
+        self.gradle.write_text("android {\n    defaultConfig {\n        minSdk 23\n    }\n}\n")
+        result, _ = self.install(sdk="23")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(self.marker.exists())
 
@@ -175,7 +175,7 @@ class MinSdkGuardTest(unittest.TestCase):
 
     def test_a_missing_build_file_does_not_block_the_install(self):
         self.gradle.unlink()
-        result, _ = self.install(sdk="25")
+        result, _ = self.install(sdk="23")
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_install_refused_for_the_sdk_names_the_cause(self):
@@ -185,7 +185,7 @@ class MinSdkGuardTest(unittest.TestCase):
                            "requires newer sdk version]\n",
         )
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("minSdk 26", result.stderr)
+        self.assertIn("minSdk 24", result.stderr)
         self.assertIn("stock launcher was left untouched", result.stderr)
         self.assertFalse(any("pm disable-user" in c for c in state["commands"]))
 
@@ -219,7 +219,7 @@ class Android7DocsTest(unittest.TestCase):
     def test_readme_states_the_launcher_requirement_with_a_pointer(self):
         start = self.readme.index("## The launcher")
         section = self.readme[start:start + 1600]
-        self.assertIn("API 26", section)
+        self.assertIn("API 24", section)
         self.assertIn("launcher/app/build.gradle", section)
         self.assertIn("docs/TROUBLESHOOTING.md", section)
 
@@ -231,8 +231,8 @@ class Android7DocsTest(unittest.TestCase):
         rows = [line for line in EXAMPLES.read_text(encoding="utf-8").split("\n")
                 if line.startswith("| `sony-kd-55x8509c/`")]
         self.assertEqual(len(rows), 1)
-        self.assertNotIn("minSdk 24", rows[0])
-        self.assertIn("minSdk 26", rows[0])
+        self.assertNotIn("minSdk 26", rows[0])
+        self.assertIn("minSdk 24", rows[0])
 
 
 if __name__ == "__main__":

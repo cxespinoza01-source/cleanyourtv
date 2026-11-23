@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -17,9 +18,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.io.File;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.TimeZone;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,7 +59,7 @@ final class WallpaperPlayer {
     private final Map<String, Set<String>> moods;
     /** config.xml latitude and longitude for the sun's times, and today's {sunrise, sunset} once worked out. */
     private final String latitude, longitude;
-    private LocalDate sunDay;
+    private int sunDay;
     private int[] sun;
 
     WallpaperPlayer(Context context, FrameLayout root, Config config) {
@@ -151,12 +151,15 @@ final class WallpaperPlayer {
     /** The pictures the rotation picks from now: wallpaper_moods' group for the time of day, or the whole collection. */
     private List<File> playable() {
         if (moods.isEmpty()) return files;
-        LocalDateTime now = LocalDateTime.now();
-        if (!now.toLocalDate().equals(sunDay)) {
-            sunDay = now.toLocalDate();
-            sun = WallpaperMood.sun(sunDay, latitude, longitude, ZoneId.systemDefault());
+        Calendar now = DateTimes.nowCalendar();
+        int today = DateTimes.dateKey(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1,
+                now.get(Calendar.DAY_OF_MONTH));
+        if (today != sunDay) {
+            sunDay = today;
+            sun = WallpaperMood.sun(sunDay, latitude, longitude, TimeZone.getDefault());
         }
-        return WallpaperMood.select(files, moods, WallpaperMood.timeOfDay(now.getHour() * 60 + now.getMinute(), sun[0], sun[1]));
+        return WallpaperMood.select(files, moods, WallpaperMood.timeOfDay(
+                now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE), sun[0], sun[1]));
     }
 
     void close() {
@@ -291,8 +294,9 @@ final class WallpaperPlayer {
             Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
             if (decoded == null) return null;
             if (dimColor != 0) new Canvas(decoded).drawColor(dimColor);
-            // One copy in GPU memory instead of a software bitmap plus its texture; the decode stays off the UI
-            // thread for rotations, and Home's return no longer uploads 4-8 MB to the GPU.
+            // Hardware bitmaps were added in API 26. Android 7 must keep the decoded software bitmap;
+            // newer devices can use a hardware copy to reduce the texture upload on Home's return.
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return decoded;
             Bitmap gpu = decoded.copy(Bitmap.Config.HARDWARE, false);
             if (gpu == null) return decoded;
             decoded.recycle();

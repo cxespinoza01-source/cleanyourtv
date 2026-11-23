@@ -14,7 +14,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ResolveInfo;
-import android.content.pm.ChangedPackages;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -79,7 +78,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -244,7 +243,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private MarigoldDrawable marigold;
     private int greetingColor;
     /** The day the petal shower last played, so it greets the first Home of each day only. */
-    private static LocalDate lastPetalShower;
+    private static int lastPetalShower;
     /** boot_to_live_tv: open the Live TV app on the first Home of each boot. */
     private boolean bootToLiveTv;
     /** open_on_start_choice: the app picked in Launcher settings may open on the first Home of each boot. */
@@ -408,7 +407,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         singleRow = cfg.singleRow;
         focusOvershoot = cfg.focusOvershoot;
         festival = cfg.festival;
-        festive = festival.active(LocalDate.now());
+        festive = festival.active(DateTimes.todayKey());
         liveTvPkg = cfg.liveTvPackage;
         idleClockMs = cfg.homeIdleClockMinutes * MINUTE_MS;
         bootToLiveTv = cfg.bootToLiveTv;
@@ -941,7 +940,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onResume() {
         super.onResume();
         // A festival that started or ended while Home was in the background: rebuild with or without it.
-        if (festive != festival.active(LocalDate.now())) {
+        if (festive != festival.active(DateTimes.todayKey())) {
             recreate();
             return;
         }
@@ -988,8 +987,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         handler.postDelayed(minuteTick, MINUTE_MS);
         if (festive && diya != null) {
             diya.start();
-            LocalDate today = LocalDate.now();
-            if (!reducedMotion && !today.equals(lastPetalShower)) {
+            int today = DateTimes.todayKey();
+            if (!reducedMotion && today != lastPetalShower) {
                 lastPetalShower = today;
                 handler.postDelayed(this::playPetalShower, 450);
             }
@@ -1082,15 +1081,40 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
     }
 
-    /** True when PackageManager reports apps changed since the last rebuild (one binder call). */
+    /**
+     * PackageManager.getChangedPackages was added in API 26. On Nougat, package broadcasts registered for
+     * this Activity's lifetime are the change signal; when the API exists, keep the sequence-number fast path.
+     * Reflection keeps the API-26-only ChangedPackages type out of this class's verifier-visible signatures.
+     */
+    private Object changedPackages(int since) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null;
+        try {
+            return PackageManager.class.getMethod("getChangedPackages", int.class)
+                    .invoke(getPackageManager(), since);
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            return null;
+        }
+    }
+
     private boolean packagesChangedSinceRebuild() {
-        ChangedPackages changed = getPackageManager().getChangedPackages(packageSequence);
-        return changed != null && !changed.getPackageNames().isEmpty();
+        Object changed = changedPackages(packageSequence);
+        if (changed == null) return false; // API 24-25: packageReceiver handles install/update/removal broadcasts.
+        try {
+            List<?> names = (List<?>) changed.getClass().getMethod("getPackageNames").invoke(changed);
+            return names != null && !names.isEmpty();
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            return false;
+        }
     }
 
     private int currentPackageSequence(int since) {
-        ChangedPackages changed = getPackageManager().getChangedPackages(since);
-        return changed != null ? changed.getSequenceNumber() : since;
+        Object changed = changedPackages(since);
+        if (changed == null) return since;
+        try {
+            return ((Number) changed.getClass().getMethod("getSequenceNumber").invoke(changed)).intValue();
+        } catch (ReflectiveOperationException | RuntimeException unavailable) {
+            return since;
+        }
     }
 
     /**
@@ -2534,7 +2558,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     private void updateRace() {
         // an empty calendar (a theme without race_calendar, or a reset) hides a panel the last theme showed
-        RaceWeekend.State s = raceCalendar.isEmpty() ? null : RaceWeekend.at(raceCalendar, java.time.Instant.now());
+        RaceWeekend.State s = raceCalendar.isEmpty() ? null : RaceWeekend.at(raceCalendar, System.currentTimeMillis());
         if (s == null) {
             racePanel.setVisibility(View.GONE);
             return;
@@ -2549,7 +2573,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             live.setSpan(new android.text.style.ForegroundColorSpan(RACE_RED), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             raceHeadline.setText(live);
         } else if (s.next != null) {
-            String in = RaceWeekend.countdown(getResources(), s.untilNext);
+            String in = RaceWeekend.countdown(getResources(), s.untilNextMs);
             raceHeadline.setText(s.next.isRace() ? getString(R.string.race_lights_out, in)
                     : getString(R.string.race_next, s.next.title(getResources()), in));
         } else {
@@ -2557,15 +2581,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
 
         // FP1 FRI 11:00 PM   FP2 SAT 2:30 AM ...: done sessions fade, the live one is red, the next one bright.
-        java.time.format.DateTimeFormatter when = java.time.format.DateTimeFormatter.ofPattern(
-                android.text.format.DateFormat.is24HourFormat(this) ? "EEE HH:mm" : "EEE h:mm a", Locale.getDefault())
-                .withZone(java.time.ZoneId.systemDefault());
+        boolean twentyFourHour = android.text.format.DateFormat.is24HourFormat(this);
         android.text.SpannableStringBuilder row = new android.text.SpannableStringBuilder();
         for (int i = 0; i < race.sessions.size(); i++) {
             RaceWeekend.Session session = race.sessions.get(i);
             if (i > 0) row.append("     ");
             int start = row.length();
-            row.append(session.shortName(getResources())).append("  ").append(when.format(session.start).toUpperCase(Locale.getDefault()));
+            row.append(session.shortName(getResources())).append("  ").append(DateTimes.formatRaceTime(session.start, twentyFourHour, Locale.getDefault(), java.util.TimeZone.getDefault()).toUpperCase(Locale.getDefault()));
             int color;
             switch (s.statuses.get(i)) {
                 case DONE: color = 0x47FFFFFF; break;

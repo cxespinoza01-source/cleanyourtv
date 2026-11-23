@@ -9,7 +9,8 @@ android {
     defaultConfig {
         // Opt-in identity for firmware with a package-name HOME allowlist; see docs/devices/xiaomi-mitv-aetp0-dofus.md.
         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
-        minSdk 26
+        // Android 7.0 (Nougat), API 24. Newer framework APIs are guarded or have compatible fallbacks.
+        minSdk 24
         targetSdk 34
         versionCode 9
         versionName '3.0'
