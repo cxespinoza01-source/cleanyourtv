@@ -153,7 +153,7 @@ Never do these in a PR:
   workflow that builds or publishes releases is closed.
 - **No root, no getting around app-store protection, no private builds** others cannot reproduce from this repo.
 - **No extras added to the PROMPT flow** beyond debloating and the launcher.
-- **Don't relax `minSdk`** (26) or the launcher's permissions; those are forks for `SHOWCASE.md`.
+- **Don't relax `minSdk`** (24) or the launcher's permissions; those are forks for `SHOWCASE.md`.
 - **Blur or crop** Wi-Fi names, people's names and cities (the top bar, a theme's `greeting_name`) before a
   screenshot goes anywhere public. No TV Settings screenshots that show accounts, emails or device names.
   From `tools/tv.py --probe`, `getprop` and backups, quote only the model, Android version and firmware build.
