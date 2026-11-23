@@ -29,6 +29,9 @@ final class DateTimes {
     }
 
     static int parseDateKey(String value) {
+        if (value == null || !value.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            throw new IllegalArgumentException("Invalid date");
+        }
         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
         f.setLenient(false);
         f.setTimeZone(UTC);
