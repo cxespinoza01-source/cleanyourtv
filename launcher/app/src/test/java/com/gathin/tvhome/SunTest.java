@@ -29,8 +29,8 @@ public class SunTest {
 
     @Test
     public void noSunriseOrSunsetAtThePoles() {
-        assertNull(Sun.riseAndSet(LocalDate.of(2026, 12, 21), 78.2, 15.6, TimeZone.getTimeZone("Arctic/Longyearbyen")));
-        assertNull(Sun.riseAndSet(LocalDate.of(2026, 6, 21), 78.2, 15.6, ZoneId.of("Arctic/Longyearbyen")));
+        assertNull(Sun.riseAndSet(DateTimes.dateKey(2026, 12, 21), 78.2, 15.6, TimeZone.getTimeZone("Arctic/Longyearbyen")));
+        assertNull(Sun.riseAndSet(DateTimes.dateKey(2026, 6, 21), 78.2, 15.6, TimeZone.getTimeZone("Arctic/Longyearbyen")));
     }
 
     @Test
