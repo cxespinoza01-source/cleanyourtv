@@ -988,7 +988,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (festive && diya != null) {
             diya.start();
             int today = DateTimes.todayKey();
-            if (!reducedMotion && !today.equals(lastPetalShower)) {
+            if (!reducedMotion && today != lastPetalShower) {
                 lastPetalShower = today;
                 handler.postDelayed(this::playPetalShower, 450);
             }
