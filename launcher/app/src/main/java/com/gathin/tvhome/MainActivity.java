@@ -78,7 +78,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -243,7 +243,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private MarigoldDrawable marigold;
     private int greetingColor;
     /** The day the petal shower last played, so it greets the first Home of each day only. */
-    private static LocalDate lastPetalShower;
+    private static int lastPetalShower;
     /** boot_to_live_tv: open the Live TV app on the first Home of each boot. */
     private boolean bootToLiveTv;
     /** open_on_start_choice: the app picked in Launcher settings may open on the first Home of each boot. */
@@ -407,7 +407,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         singleRow = cfg.singleRow;
         focusOvershoot = cfg.focusOvershoot;
         festival = cfg.festival;
-        festive = festival.active(LocalDate.now());
+        festive = festival.active(DateTimes.todayKey());
         liveTvPkg = cfg.liveTvPackage;
         idleClockMs = cfg.homeIdleClockMinutes * MINUTE_MS;
         bootToLiveTv = cfg.bootToLiveTv;
@@ -987,7 +987,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         handler.postDelayed(minuteTick, MINUTE_MS);
         if (festive && diya != null) {
             diya.start();
-            LocalDate today = LocalDate.now();
+            int today = DateTimes.todayKey();
             if (!reducedMotion && !today.equals(lastPetalShower)) {
                 lastPetalShower = today;
                 handler.postDelayed(this::playPetalShower, 450);
@@ -2558,7 +2558,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     private void updateRace() {
         // an empty calendar (a theme without race_calendar, or a reset) hides a panel the last theme showed
-        RaceWeekend.State s = raceCalendar.isEmpty() ? null : RaceWeekend.at(raceCalendar, java.time.Instant.now());
+        RaceWeekend.State s = raceCalendar.isEmpty() ? null : RaceWeekend.at(raceCalendar, System.currentTimeMillis());
         if (s == null) {
             racePanel.setVisibility(View.GONE);
             return;
@@ -2581,15 +2581,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
 
         // FP1 FRI 11:00 PM   FP2 SAT 2:30 AM ...: done sessions fade, the live one is red, the next one bright.
-        java.time.format.DateTimeFormatter when = java.time.format.DateTimeFormatter.ofPattern(
-                android.text.format.DateFormat.is24HourFormat(this) ? "EEE HH:mm" : "EEE h:mm a", Locale.getDefault())
-                .withZone(java.time.ZoneId.systemDefault());
+        boolean twentyFourHour = android.text.format.DateFormat.is24HourFormat(this);
         android.text.SpannableStringBuilder row = new android.text.SpannableStringBuilder();
         for (int i = 0; i < race.sessions.size(); i++) {
             RaceWeekend.Session session = race.sessions.get(i);
             if (i > 0) row.append("     ");
             int start = row.length();
-            row.append(session.shortName(getResources())).append("  ").append(when.format(session.start).toUpperCase(Locale.getDefault()));
+            row.append(session.shortName(getResources())).append("  ").append(DateTimes.formatRaceTime(session.start, twentyFourHour, Locale.getDefault(), java.util.TimeZone.getDefault()).toUpperCase(Locale.getDefault()));
             int color;
             switch (s.statuses.get(i)) {
                 case DONE: color = 0x47FFFFFF; break;
