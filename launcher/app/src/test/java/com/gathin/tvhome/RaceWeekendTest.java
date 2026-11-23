@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,31 +18,31 @@ public class RaceWeekendTest {
     private static final RaceWeekend.Race AUSTIN = new RaceWeekend.Race(18, "United States Grand Prix", "Austin",
             Arrays.asList(
                     // Out of order on purpose: the calendar is sorted by start time.
-                    new RaceWeekend.Session("race", Instant.parse("2026-10-25T20:00:00Z")),
-                    new RaceWeekend.Session("FP1", Instant.parse("2026-10-23T17:30:00Z")),
-                    new RaceWeekend.Session("FP2", Instant.parse("2026-10-23T21:00:00Z")),
-                    new RaceWeekend.Session("FP3", Instant.parse("2026-10-24T17:30:00Z")),
-                    new RaceWeekend.Session("Qualifying", Instant.parse("2026-10-24T21:00:00Z"))));
+                    new RaceWeekend.Session("race", Instant.parse("2026-10-25T20:00:00Z").toEpochMilli()),
+                    new RaceWeekend.Session("FP1", Instant.parse("2026-10-23T17:30:00Z").toEpochMilli()),
+                    new RaceWeekend.Session("FP2", Instant.parse("2026-10-23T21:00:00Z").toEpochMilli()),
+                    new RaceWeekend.Session("FP3", Instant.parse("2026-10-24T17:30:00Z").toEpochMilli()),
+                    new RaceWeekend.Session("Qualifying", Instant.parse("2026-10-24T21:00:00Z").toEpochMilli())));
     private static final List<RaceWeekend.Race> CALENDAR = Collections.singletonList(AUSTIN);
 
     @Test
     public void nothingBeforeTheWeekendOpens() {
-        assertNull(RaceWeekend.at(CALENDAR, Instant.parse("2026-10-23T05:29:00Z")));
+        assertNull(RaceWeekend.at(CALENDAR, Instant.parse("2026-10-23T05:29:00Z").toEpochMilli()));
     }
 
     @Test
     public void opensTwelveHoursBeforeFirstPractice() {
-        RaceWeekend.State s = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-23T05:30:00Z"));
+        RaceWeekend.State s = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-23T05:30:00Z").toEpochMilli());
         assertSame(AUSTIN, s.race);
         assertEquals("FP1", s.next.name);
-        assertEquals(Duration.ofHours(12), s.untilNext);
+        assertEquals(12L * 60 * 60 * 1000, s.untilNextMs);
         assertEquals(RaceWeekend.Status.NEXT, s.statuses.get(0));
         assertEquals(RaceWeekend.Status.LATER, s.statuses.get(4));
     }
 
     @Test
     public void aSessionOnTrackIsLiveAndTheNextOneIsCountedDown() {
-        RaceWeekend.State s = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-24T21:30:00Z"));
+        RaceWeekend.State s = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-24T21:30:00Z").toEpochMilli());
         assertEquals("QUALIFYING", s.live.name);
         assertTrue(s.next.isRace());
         assertEquals(Arrays.asList(RaceWeekend.Status.DONE, RaceWeekend.Status.DONE, RaceWeekend.Status.DONE,
@@ -52,17 +51,17 @@ public class RaceWeekendTest {
 
     @Test
     public void theRaceIsLiveForTwoHoursThenFinished() {
-        RaceWeekend.State live = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-25T21:59:00Z"));
+        RaceWeekend.State live = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-25T21:59:00Z").toEpochMilli());
         assertTrue(live.live.isRace());
         assertNull(live.next);
-        RaceWeekend.State done = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-25T22:00:00Z"));
+        RaceWeekend.State done = RaceWeekend.at(CALENDAR, Instant.parse("2026-10-25T22:00:00Z").toEpochMilli());
         assertTrue(done.finished());
     }
 
     @Test
     public void closesFourHoursAfterTheRaceStarts() {
-        assertTrue(RaceWeekend.at(CALENDAR, Instant.parse("2026-10-25T23:59:00Z")).finished());
-        assertNull(RaceWeekend.at(CALENDAR, Instant.parse("2026-10-26T00:00:00Z")));
+        assertTrue(RaceWeekend.at(CALENDAR, Instant.parse("2026-10-25T23:59:00Z").toEpochMilli()).finished());
+        assertNull(RaceWeekend.at(CALENDAR, Instant.parse("2026-10-26T00:00:00Z").toEpochMilli()));
     }
 
 }
