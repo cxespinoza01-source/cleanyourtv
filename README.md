@@ -999,7 +999,8 @@ script for it is in [PR #84](https://github.com/Gathin23/cleanyourtv/pull/84).
 <summary><b>Can I just download the APK?</b></summary>
 
 Build it with the one-line script; it takes a minute and you
-control what goes on your TV. No prebuilt binaries.
+control what goes on your TV. No prebuilt binaries. For the Android 7 compatibility branch in this
+fork, the CI build publishes a temporary APK under Actions → the latest successful run → Artifacts.
 
 </details>
 
